@@ -1,0 +1,51 @@
+services:
+  # ── PostgreSQL Database ──────────────────────────────────────────────────────
+  - type: pserv
+    name: campuspulse-db
+    plan: free
+    env: postgresql
+    envVars:
+      - key: POSTGRES_USER
+        value: campuspulse
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: POSTGRES_DB
+        value: campuspulse
+
+  # ── Node.js Backend API ──────────────────────────────────────────────────────
+  - type: web
+    name: campuspulse-api
+    runtime: node
+    plan: free
+    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy && node prisma/seed.js
+    startCommand: node src/index.js
+    rootDir: backend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: campuspulse-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: COOKIE_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: https://campuspulse.vercel.app
+      - key: ADMIN_EMAIL
+        value: admin@svecw.edu.in
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: REPORTS_PER_HOUR
+        value: 5
+      - key: CONFIRM_WINDOW_HOURS
+        value: 72
+      - key: REOPEN_WINDOW_DAYS
+        value: 7
+      - key: UPLOAD_DIR
+        value: /opt/render/project/src/backend/uploads
+    healthCheckPath: /api/health
+    autoDeploy: true
